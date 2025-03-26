@@ -28,8 +28,7 @@ class ConsoleUI:
                     if user_id:
                         self.is_authenticated = True
                         print(f"Signup successful! User ID: {user_id}")
-                    else:
-                        print("Signup failed")
+                    
 
                 elif choice == "2": 
                     username = input("Username: ")

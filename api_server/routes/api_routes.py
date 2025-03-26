@@ -4,6 +4,7 @@ from services.category_service import CategoryService
 from services.product_service import ProductService
 from services.cart_service import CartService
 from services.order_service import OrderService
+from database.db_connection import get_db_connection
 
 app = Flask(__name__)
 auth_service = AuthService()
@@ -15,14 +16,49 @@ order_service = OrderService()
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
+    print(f"Signup attempt for user: {data.get('username')}")
+    
+    # Check if user already exists
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT id FROM users WHERE username = %s", (data.get('username'),))
+    existing_user = cursor.fetchone()
+    
+    if existing_user:
+        print(f"User {data.get('username')} already exists")
+        cursor.close()
+        conn.close()
+        return jsonify({'error': 'Username already exists'}), 400
+    
+    # Attempt signup
     user_id = auth_service.signup(data['username'], data['password'])
-    return jsonify({'user_id': user_id}) if user_id else jsonify({'error': 'Signup failed'}), 400
+    print(f"Signup result: {user_id}")
+    
+    # Verify user was created
+    cursor.execute("SELECT id FROM users WHERE username = %s", (data.get('username'),))
+    new_user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if new_user:
+        return jsonify({'user_id': new_user['id']})
+    else:
+        return jsonify({'error': 'Signup failed'}), 400
 
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    user_id = auth_service.login(data['username'], data['password'])
-    return jsonify({'user_id': user_id}) if user_id else jsonify({'error': 'Login failed'}), 401
+    username = data.get('username')
+    password = data.get('password')
+    print(f"Login attempt for user: {username}")
+    
+    user_id = auth_service.login(username, password)
+    print(f"Login result: {user_id}")
+    
+    if user_id:
+        return jsonify({'user_id': user_id})
+    else:
+        return jsonify({'error': 'Login failed'}), 401
 
 @app.route('/categories', methods=['GET'])
 def get_categories():

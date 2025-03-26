@@ -8,8 +8,18 @@ class User:
     def save(self):
         db = DatabaseConnection()
         conn = db.connect()
+        if not conn:
+            print("Failed to connect to database")
+            return None
+        
         cursor = conn.cursor()
         query = "INSERT INTO users (username, password) VALUES (%s, %s)"
-        cursor.execute(query, (self.username, self.password))
-        conn.commit()
-        db.close()
+        try:
+            cursor.execute(query, (self.username, self.password))
+            conn.commit()
+            print(f"User {self.username} saved successfully")
+        except Exception as e:
+            print(f"Error saving user: {e}")
+            conn.rollback()
+        finally:
+            db.close()

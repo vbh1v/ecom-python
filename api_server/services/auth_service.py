@@ -4,12 +4,19 @@ class AuthService:
     def login(self, username, password):
         db = DatabaseConnection()
         conn = db.connect()
-        cursor = conn.cursor()
+        if not conn:
+            print("Failed to connect to database")
+            return None
+            
+        cursor = conn.cursor(dictionary=True)
         query = "SELECT id FROM users WHERE username = %s AND password = %s"
         cursor.execute(query, (username, password))
-        user_id = cursor.fetchone()
+        result = cursor.fetchone()
         db.close()
-        return user_id[0] if user_id else None
+        
+        if result:
+            return result['id']
+        return None
 
     def signup(self, username, password):
         from models.user import User
